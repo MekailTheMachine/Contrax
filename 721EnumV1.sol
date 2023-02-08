@@ -14,14 +14,18 @@ contract NFT is ERC721Enumerable, Ownable {
   // Variables
   string baseURI; // base URI that will be used to generate the full token URI
   string public baseExtension = ".json"; // file extension that will be used to generate the full token URI
+
   uint256 public maxSupply = 1528; // maximum number of tokens that can be minted
-  uint256 public maxMintAmountPerTx = 10; // maximum number of tokens that can be minted in one transaction
+  uint256 public maxMintAmountPerTx = 20; // maximum number of tokens that can be minted in one transaction
   uint256 public currentSupply; // the current number of tokens in circulation
-  uint256 public costFlux = 1 + (currentSupply / maxSupply); // the rate at which the cost of minting changes
-  uint256 public cost = (0.0195 * costFlux) ether; // the cost of minting tokens
-  uint256[] public usedTokenIds; // an array that will be used in version 2.0 to randomize TokenIDs
-  bool public paused = false; // a flag indicating if the contract is paused or not
-  bool public revealed = false; // a flag indicating if the metadata of the tokens is revealed or not
+  uint256 public costFlux = 1 + (currentSupply/ maxSupply); // the rate at which the cost of minting changes
+  uint256 public cost = (1.95 * costFlux) * 10**16; // the cost of minting tokens
+  uint256 public maxMintAmount;
+
+  // uint256[] public usedTokenIds; // an array that will be used in version 2.0 to randomize TokenIDs
+
+  bool public paused = true;
+  bool public revealed = false; 
   string public notRevealedUri; // the URI to be returned if the metadata of the tokens is not revealed
 
   // Contract constructor
@@ -76,7 +80,7 @@ contract NFT is ERC721Enumerable, Ownable {
     // Update the current supply and costFlux variables
     currentSupply += _mintAmount;
     costFlux = 1 + (currentSupply / maxSupply);
-    cost = (0.0195 * costFlux) ether;
+    cost = 1.95 * 10**16 * costFlux;
     
   }
 
