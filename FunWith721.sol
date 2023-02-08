@@ -31,6 +31,8 @@ contract CushyCouches is ERC721, Ownable {
   bool public revealed = false;
   bool public paused = true;
 
+      // =============================================================================
+
   constructor() ERC721("Cushy Couch", "CC3") {
     setHiddenMetadataUri("ipfs://QmeMX4QBzfEaTXij4isK9pumVdNTZfA9qiR8Ea9fVvJKnr/HiddenCoushins.json");
   }
@@ -54,6 +56,16 @@ contract CushyCouches is ERC721, Ownable {
     require(msg.value >= cost * _mintAmount, "Insufficient funds.");
 
     //or random TokenID, insert for loop here to accomodate for multiple token purchases; or shuffle the array prior to each mint
+    /*
+    
+    
+    for (uint256 i = 0; i < _mintAmount; i++) {
+      uint256 newTokenId = _generateRandomId();
+      _safeMint(msg.sender, newTokenId);
+      usedTokenIds.push(newTokenId);
+    
+
+    */
 
     // mint tokens
     _minter(msg.sender, _mintAmount);
@@ -67,6 +79,32 @@ contract CushyCouches is ERC721, Ownable {
 
 
   }
+
+      // ============================================================================= Extraneous functions
+
+/*
+function _generateRandomId() internal view returns (uint256) {
+    uint256 newTokenId;
+    while (true) {
+      newTokenId = uint256(keccak256(abi.encodePacked(now, msg.sender, supply.current()))) % (maxSupply + 1);
+      if (_tokenIdIsUnique(newTokenId)) {
+        break;
+      }
+    }
+    return newTokenId;
+  }
+
+  function _tokenIdIsUnique(uint256 _tokenId) internal view returns (bool) {
+    for (uint256 i = 0; i < usedTokenIds.length; i++) {
+      if (_tokenId == usedTokenIds[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+*/
+
     // Mint tokens for a specific address
   function mintForAddress(uint256 _mintAmount, address _receiver) public mintCompliance(_mintAmount) onlyOwner {
     _minter(_receiver, _mintAmount);
