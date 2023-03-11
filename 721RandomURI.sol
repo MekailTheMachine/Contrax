@@ -48,7 +48,7 @@ contract NFT is ERC721Enumerable, Ownable {
 
     // Function to generate a random number between 1 and maxSupply that has not been used before
   function generateRandomTokenNumber() private returns (uint256) {
-    uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender, _baseURIHash()))) % maxSupply + 1;
+    uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender, baseURI))) % maxSupply + 1;
     while (usedTokenNumbers[randomNumber]) {
         randomNumber = (randomNumber + 1) % maxSupply + 1;
     }
