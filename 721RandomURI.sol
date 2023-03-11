@@ -1,51 +1,63 @@
 // SPDX-License-Identifier: MIT
 
+// Specify the required version of Solidity compiler
 pragma solidity >=0.7.0 <0.9.0;
 
+// Import two libraries: ERC721Enumerable and Ownable
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// Contract inherits from the ERC721Enumerable and Ownable contracts
 contract NFT is ERC721Enumerable, Ownable {
-  bytes32 public baseURIHash;
-  string public baseExtension = ".json";
-  string public notRevealedUri;
+  using Strings for uint256;
+
+  // Variables
+  string baseURI; // base URI that will be used to generate the full token URI
+  string public baseExtension = ".json"; // file extension that will be used to generate the full token URI
+  string public notRevealedUri; // the URI to be returned if the metadata of the tokens is not revealed
   
   uint256 public maxSupply = 1528;
   uint256 public maxMintAmount = 20;
-  uint256 public cost = 19500000000000000; // 0.0195 ether in wei
+  uint256 public currentSupply = 0;
+  uint256 public costFlux = 1 + (currentSupply/ maxSupply);
+  uint256 public cost = 0.0195 ether;
 
   bool public paused = true;
   bool public revealed = false;
 
+// Contract constructor
   constructor(
     string memory _name, 
     string memory _symbol, 
-    bytes32 _initBaseURIHash,
-    string memory _initNotRevealedUri
+    string memory _initBaseURI, // the initial base URI
+    string memory _initNotRevealedUri // the initial URI to be returned if the metadata of the tokens is not revealed
   ) ERC721(_name, _symbol) {
-    setBaseURIHash(_initBaseURIHash);
+    // Initialize the base URI
+    setBaseURI(_initBaseURI);
+    // Initialize the URI to be returned if the metadata of the tokens is not revealed
     setNotRevealedURI(_initNotRevealedUri);
   }
 
-  function _baseURIHash() internal view virtual returns (bytes32) {
-    return baseURIHash;
+  // Internal function that returns the base URI
+  function _baseURI() internal view virtual override returns (string memory) {
+    return baseURI;
   }
 
-// Mapping to keep track of used token numbers
-mapping (uint256 => bool) private usedTokenNumbers;
+    // Mapping to keep track of used token numbers
+  mapping (uint256 => bool) private usedTokenNumbers;
 
-// Function to generate a random number between 1 and maxSupply that has not been used before
-function generateRandomTokenNumber() private returns (uint256) {
-    uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender))) % maxSupply + 1;
+    // Function to generate a random number between 1 and maxSupply that has not been used before
+  function generateRandomTokenNumber() private returns (uint256) {
+    uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender, _baseURIHash()))) % maxSupply + 1;
     while (usedTokenNumbers[randomNumber]) {
         randomNumber = (randomNumber + 1) % maxSupply + 1;
     }
     usedTokenNumbers[randomNumber] = true;
     return randomNumber;
-}
+  }
 
-// Function to mint NFTs using a random token number
-function mintRandom(uint256 _mintAmount) public payable {
+  // ======================== MINT FUNCTION ==================================================
+  function mint(uint256 _mintAmount) public payable {
     uint256 supply = totalSupply();
     require(!paused, "The contract is currently paused");
     require(_mintAmount > 0, "Invalid mint amount");
@@ -53,7 +65,7 @@ function mintRandom(uint256 _mintAmount) public payable {
     require(supply + _mintAmount <= maxSupply);
 
     if (msg.sender != owner()) {
-        require(msg.value >= cost * maxSupply / (supply + 1) * _mintAmount);
+      require(msg.value >= cost * costFlux * _mintAmount);
     }
 
     for (uint256 i = 1; i <= _mintAmount; i++) {
@@ -61,45 +73,52 @@ function mintRandom(uint256 _mintAmount) public payable {
         _safeMint(msg.sender, tokenId);
         supply += 1;
     }
-}
 
-/*
-The gas cost of generating a random number using keccak256 is around 3,000 gas, 
-which is a small amount compared to the cost of other operations in the contract. 
-The gas cost of checking if a token number has already been used in the usedTokenNumbers mapping is also relatively small, 
-as it only requires a lookup in the mapping and a few arithmetic operations.
-*/
+    costFlux = 1 + (currentSupply / maxSupply);
+      // mint tokens, and update the cost flux
+  }
 
+  // ============================= OTHER PUBLIC FUNCTIONS ===============================================================
+  // Function to get the token IDs of all tokens owned by a particular address
   function walletOfOwner(address _owner) public view returns (uint256[] memory) {
+    // Get the total number of tokens owned by the address
     uint256 ownerTokenCount = balanceOf(_owner);
+    
+    // Create an array to store the token IDs of the tokens owned by the address
     uint256[] memory tokenIds = new uint256[](ownerTokenCount);
+    
+    // Loop through each of the tokens owned by the address and get its token ID
     for (uint256 i; i < ownerTokenCount; i++) {
       tokenIds[i] = tokenOfOwnerByIndex(_owner, i);
     }
+    
+    // Return the array of token IDs
     return tokenIds;
   }
 
+  // TokenURI - TokenID pairing
   function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    // Check if the token ID exists
     require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+    
+    // If the tokens have not been revealed, return the notRevealedUri string
     if(revealed == false) {
         return notRevealedUri;
     }
-    bytes32 currentBaseURIHash = _baseURIHash();
-    return currentBaseURIHash.length > 0
-        ? string(abi.encodePacked(bytes32ToString(currentBaseURIHash), tokenId.toString(), baseExtension))
+
+    // Get the current base URI
+    string memory currentBaseURI = _baseURI();
+    
+    // If the length of the current base URI is greater than 0, return the concatenated string of the base URI, the token ID, and the base extension
+    // Otherwise, return an empty string
+    return bytes(currentBaseURI).length > 0
+        ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
         : "";
   }
 
-  function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
-    bytes memory bytesArray = new bytes(64);
-    for (uint256 i = 0; i < 32; i++) {
-      uint256 value = uint256(_bytes32[i]);
-      bytesArray[i * 2] = bytes1(uint8(value / 16 + 48));
-      bytesArray[i * 2 + 1] = bytes1(uint8(value % 16 + 48));
-    }
-    return string(bytesArray);
-  }
+// ========================= FUNCTIONS TO BE CALLED BY THE CONTRACT OWNER ONLY =================================================
 
+  //only owner
   function reveal() public onlyOwner {
       revealed = true;
   }
@@ -116,8 +135,8 @@ as it only requires a lookup in the mapping and a few arithmetic operations.
     notRevealedUri = _notRevealedURI;
   }
 
-  function setBaseURIHash(bytes32 _newBaseURIHash) public onlyOwner {
-    baseURIHash = _newBaseURIHash;
+  function setBaseURI(string memory _newBaseURI) public onlyOwner {
+    baseURI = _newBaseURI;
   }
 
   function setBaseExtension(string memory _newBaseExtension) public onlyOwner {
@@ -132,6 +151,4 @@ as it only requires a lookup in the mapping and a few arithmetic operations.
     (bool os, ) = payable(owner()).call{value: address(this).balance}("");
     require(os);
   }
-
-  receive() external payable {}
 }
