@@ -11,4 +11,4 @@ These contracts will be used as a base.
 
 The generateRandomTokenNumber() function uses the current timestamp, block difficulty, and sender address to generate a pseudo-random number between 1 and maxSupply. If the generated number has already been used for an existing token, the function increments the number by 1 (wrapping around to 1 if the number exceeds maxSupply) until it finds an unused number. Once an unused number is found, the function marks it as used in the usedTokenNumbers mapping and returns it.
 
-The mintRandom() function uses the generateRandomTokenNumber() function to generate a random token number for each NFT being minted. This ensures that each NFT has a unique and unpredictable token number.
+The mintRandom() function uses the generateRandomTokenNumber() function to generate a random token number for each NFT being minted. This ensures that each NFT has a unique and a semi-unpredictable token number.
