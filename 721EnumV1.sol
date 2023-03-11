@@ -7,7 +7,7 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// Contract NFT inherits from the ERC721Enumerable and Ownable contracts
+// Contract inherits from the ERC721Enumerable and Ownable contracts
 contract NFT is ERC721Enumerable, Ownable {
   using Strings for uint256;
 
