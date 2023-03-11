@@ -63,6 +63,12 @@ function mintRandom(uint256 _mintAmount) public payable {
     }
 }
 
+/*
+The gas cost of generating a random number using keccak256 is around 3,000 gas, 
+which is a small amount compared to the cost of other operations in the contract. 
+The gas cost of checking if a token number has already been used in the usedTokenNumbers mapping is also relatively small, 
+as it only requires a lookup in the mapping and a few arithmetic operations.
+*/
 
   function walletOfOwner(address _owner) public view returns (uint256[] memory) {
     uint256 ownerTokenCount = balanceOf(_owner);
